@@ -1,6 +1,7 @@
 import cors from 'cors';
+import { configDotenv } from 'dotenv';
 import { Request } from 'express';
-
+configDotenv()
 const API_CONNECTION_URL: string = String(process.env.API_URL)
 
 const corsOptions: cors.CorsOptions = {
@@ -10,6 +11,7 @@ const corsOptions: cors.CorsOptions = {
         "Content-Type",
         "Accept",
         "X-Access-Token",
+        "Authorization"
     ],
     credentials: true,
     methods: "GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE",
