@@ -1,8 +1,10 @@
 import { Schema, Document, model } from "mongoose";
+import { ICategory } from "./category.model";
 
 export interface ISpecificCategory extends Document {
     name: string,
-    discription?: string
+    description?: string,
+    categoryId : ICategory['_id']
 }
 
 const categorySchema: Schema<ISpecificCategory> = new Schema<ISpecificCategory>(
@@ -12,9 +14,14 @@ const categorySchema: Schema<ISpecificCategory> = new Schema<ISpecificCategory>(
             required: true,
             unique: true
         },
-        discription: {
+        categoryId: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: 'categories',
+        },
+        description: {
             type: String, 
-            required: false,
+            required: true,
             default: "No Description"
         }
     },

@@ -6,7 +6,11 @@ import helmetMiddleware from "./configs/helmet.config";
 import { bodyParserJsonMiddleware, bodyParserUrlencodedMiddleware } from "./configs/bodyParser.config";
 import cookieParserMiddleware from "./configs/cookieParser.config";
 import { connectDatabase } from "./configs/mongodb.config";
+
 import initAuthRoutes from "./routes/auth.route";
+import initCategoryRoute from "./routes/category.route";
+import initAccountRoute from "./routes/account.route";
+import initProductRoute from "./routes/prouduct.route";
 
 dotenv.config()
 
@@ -25,6 +29,9 @@ app.use(cookieParserMiddleware)
 connectDatabase()
 
 initAuthRoutes(app)
+initCategoryRoute(app)
+initAccountRoute(app)
+initProductRoute(app)
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);

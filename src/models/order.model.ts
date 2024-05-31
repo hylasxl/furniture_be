@@ -3,7 +3,7 @@ import { IProduct } from "./product.model"
 import { IAccount } from "./account.model"
 
 
-interface IProducts extends Document {
+export interface IProducts {
     productId: IProduct['_id'],
     quantity: number
 }
@@ -12,8 +12,8 @@ export interface IOrder extends Document {
     accountId: IAccount['_id'],
     products: IProducts[],
     totalPrice: number,
-    orderDate: Date,
-    deliveryDate: Date,
+    orderDate: string,
+    deliveryDate: string,
     status: string
 }
 
@@ -51,16 +51,13 @@ const orderSchema: Schema<IOrder> = new Schema<IOrder>(
             min: 0
         },
         orderDate: {
-            type: Date,
-            required: true,
-            default: new Date(),
-            max: new Date()
+            type: String,
+            required: false,
         },
         deliveryDate: {
-            type: Date,
-            required: true,
-            default: new Date(),
-            min: new Date()
+            type: String,
+            required: false,
+            
         },
         status:{
             type: String, 

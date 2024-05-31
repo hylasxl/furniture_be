@@ -2,7 +2,7 @@ import { Schema, Document, model } from "mongoose";
 
 export interface ICategory extends Document {
     name: string,
-    discription?: string
+    description?: string
 }
 
 const categorySchema: Schema<ICategory> = new Schema<ICategory>(
@@ -12,7 +12,7 @@ const categorySchema: Schema<ICategory> = new Schema<ICategory>(
             required: true,
             unique: true
         },
-        discription: {
+        description: {
             type: String, 
             required: false,
             default: "No Description"

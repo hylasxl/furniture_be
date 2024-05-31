@@ -1,4 +1,4 @@
-import accountModel from "../models/account.model";
+import accountModel, { IAuthProviders } from "../models/account.model";
 import accountInfoModel from "../models/accountInfo.model";
 import accountTypeModel from "../models/accountType.model";
 import permissionAccountTypeModel from "../models/permissionAccountType.model";
@@ -9,6 +9,8 @@ import { splitFullName } from "../utils/function.utils";
 import crypto from "crypto"
 import jwt from "jsonwebtoken"
 import { IToken } from "../models/account.model";
+import { IGoogleData } from "../types/googleData.type";
+import { ResponseData } from "../types/responseData.type";
 configDotenv()
 
 const algorithm = "aes-256-cbc"
@@ -31,7 +33,7 @@ const decrypt = (encryptedPassword: string) => {
 
 
 
-export const RegisterAccount = async (data: RegisterData) => {
+export const RegisterAccount = async (data: RegisterData): Promise<ResponseData> => {
 
     const encrypted = encrypt(data.password)
 
@@ -86,8 +88,24 @@ export const RegisterAccount = async (data: RegisterData) => {
     }
 }
 
-export const Login = async (data: ILoginData) => {
+export const Login = async (data: ILoginData): Promise<ResponseData> => {
     try {
+        const updateRefreshToken = await accountModel.findOneAndUpdate(
+            {
+                email: data.email
+            },
+            {
+                $set:
+                {
+                    refreshToken: "",
+                    loginType: "Normal",
+                    accessToken: ""
+                }
+            },
+            {
+                new: true
+            }
+        ).exec()
         const foundUser = await accountModel.findOne(
             {
                 email: data.email
@@ -122,6 +140,8 @@ export const Login = async (data: ILoginData) => {
         ).exec()
 
         const decryptedPassword: string = decrypt(String(foundUser?.password))
+        console.log(decryptedPassword);
+        
         if (decryptedPassword !== data.password) {
             return {
                 RC: 0,
@@ -141,7 +161,7 @@ export const Login = async (data: ILoginData) => {
             permissions
         }
 
-        
+
         return {
             RC: 1,
             RM: "Login Successfully",
@@ -149,6 +169,135 @@ export const Login = async (data: ILoginData) => {
             statusCode: 200
         }
     } catch (err) {
+        return {
+            RC: 0,
+            RM: "Login Failed",
+            RD: {},
+            statusCode: 500
+        }
+    }
+}
+
+export const GoogleLogin = async (data: IGoogleData): Promise<ResponseData> => {
+    try {
+        
+        const requestToken = data.token
+        const userData: any = data.user
+        const uid = userData.uid
+        const authGoogleProviders: IAuthProviders = {
+            uid,
+            authToken: requestToken,
+            accessToken: userData.stsTokenManager.accessToken,
+            refreshToken: userData.stsTokenManager.refreshToken
+        }
+        
+        const matchedUid = await accountModel.findOne({ 'authProviders.google.uid': uid }).exec()
+        if (!matchedUid) {
+            
+            const accountTypeCustomerId = await accountTypeModel.findOne(
+                {
+                    typeCode: "CUS"
+                }
+            ).select('_id').exec()
+
+            const insertedAccount = await accountModel.insertMany({
+                email: userData.email,
+                accountType: accountTypeCustomerId?._id,
+                isActivated: true,
+                authProviders: {
+                    google: authGoogleProviders
+                },
+                registerType: "Google",
+                loginType: "Google"
+            })
+
+            console.log(insertedAccount);
+            
+
+            const insertedId = insertedAccount[0]._id
+            const { firstName, lastName } = splitFullName(userData.displayName)
+            const insertedAccountInfo = await accountInfoModel.insertMany({
+                accountId: insertedId,
+                firstName,
+                lastName,
+                avatarURL: userData.photoURL,
+                phone: ""
+            })
+        } else {
+            const updateRefreshToken = await accountModel.findOneAndUpdate(
+                {
+                    email: userData.email
+                },
+                {
+                    $set:
+                    {
+                        refreshToken: "",
+                        loginType: "Google",
+                        accessToken: "",
+                        authProviders: {
+                            google: authGoogleProviders
+                        }
+                    }
+                },
+                {
+                    new: true
+                }
+            ).exec()
+        }
+
+        const foundUser = await accountModel.findOne(
+            {
+                email: userData.email
+            },
+            {
+                createdAt: 0,
+                updatedAt: 0,
+                __v: 0
+            }
+        ).exec()
+
+        if (!foundUser) {
+            return {
+                RC: 0,
+                RM: "User Not Found",
+                RD: {},
+                statusCode: 200
+            }
+        }
+
+        const foundUserData = await accountInfoModel.findOne(
+            {
+                accountId: foundUser._id
+            },
+            {
+                createdAt: 0,
+                updatedAt: 0,
+                __v: 0,
+                _id: 0,
+                accountId: 0
+            }
+        ).exec()
+
+        const permissions = await permissionAccountTypeModel.find({
+            accountTypeId: foundUser.accountType
+        }).exec()
+
+        const returnedUserData = {
+            ...foundUser.toObject(),
+            ...foundUserData?.toObject(),
+            permissions
+        }
+
+        return {
+            RC: 1,
+            RM: "Login with Google successfully",
+            RD: returnedUserData,
+            statusCode: 200
+        }
+    }
+    catch (err) {
+        console.log(err);
+
         return {
             RC: 0,
             RM: "Login Failed",

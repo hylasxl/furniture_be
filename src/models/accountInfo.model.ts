@@ -1,11 +1,11 @@
 import { Schema, Document, model } from "mongoose";
 import { IAccount } from "./account.model";
 
-interface IAccountInfo extends Document {
+export interface IAccountInfo extends Document {
     accountId: IAccount['_id'];
     firstName: string;
     lastName: string;
-    dateofBirth: Date;
+    dateofBirth?: Date;
     avatarURL?: string;
     gender: string;
     address: string;
@@ -44,7 +44,6 @@ const accountInfoSchema: Schema<IAccountInfo> = new Schema<IAccountInfo>(
         phone: {
             type: String,
             required: false,
-            unique: true,
         },
     },
     {

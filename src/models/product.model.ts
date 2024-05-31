@@ -1,15 +1,38 @@
 import { Schema, Document, model, SchemaTypes } from "mongoose";
 import { ISpecificCategory } from "./specificCategory.model";
 
-export interface IProduct extends Document{
+export interface IProductSize {
+    width: number,
+    length: number,
+    height: number
+}
+
+export interface IProduct extends Document {
     name: string,
     specificCategoryId: ISpecificCategory['_id'],
     originalPrice: number,
-    currentPrice: number,
+    currentPrice?: number,
     description?: string,
     thumbnailURL?: string,
-    stock: number
+    stock: number,
+    producer?: string,
+    color?: string,
+    size: IProductSize,
+    warrantyDuration?: number
 }
+
+
+const productSizeSchema: Schema<IProductSize> = new Schema<IProductSize>({
+    width: {
+        type: Number
+    },
+    length: {
+        type: Number
+    },
+    height: {
+        type: Number
+    }
+})
 
 const productSchema: Schema<IProduct> = new Schema<IProduct>(
     {
@@ -24,7 +47,7 @@ const productSchema: Schema<IProduct> = new Schema<IProduct>(
             required: true
         },
         originalPrice: {
-            type: Number, 
+            type: Number,
             required: true,
             min: 0
         },
@@ -46,7 +69,21 @@ const productSchema: Schema<IProduct> = new Schema<IProduct>(
             type: Number,
             required: true,
             min: 0
+        },
+        producer: {
+            type: String,
+            default: "Nội thất Viva"
+        },
+        color: {
+            type: String,
+        },
+        size: productSizeSchema,
+        warrantyDuration: {
+            type: Number,
+            default: 0,
+            min: 0
         }
+
     },
     {
         timestamps: true

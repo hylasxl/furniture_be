@@ -5,9 +5,11 @@ export interface IToken extends Document {
     token: string
 }
 
-interface IAuthProviders extends Document {
+export interface IAuthProviders {
+    uid: string,
+    authToken: string,
     accessToken?: IToken,
-    refreshToken?: string // Modified to remove nested refreshToken
+    refreshToken?: string
 }
 
 export interface IAccount extends Document {
@@ -15,13 +17,13 @@ export interface IAccount extends Document {
     email: string,
     accountType: IAccountType['_id'],
     isActivated: boolean,
-    token?: string,
+    accessToken?: string,
     refreshToken?: string,
     authProviders?: {
         google?: IAuthProviders,
-        facebook?: IAuthProviders
     },
-    registerType: string
+    registerType: string,
+    loginType?: string
 }
 
 const authProvidersSchema: Schema<IAuthProviders> = new Schema<IAuthProviders>(
@@ -30,18 +32,25 @@ const authProvidersSchema: Schema<IAuthProviders> = new Schema<IAuthProviders>(
             type: String,
             required: false
         },
-        // refreshToken field removed from here
+        uid: {
+            type: String,
+            required: true
+        },
+        refreshToken: {
+            type: String,
+            required: true
+        },
+        authToken: {
+            type: String,
+            required: true
+        }
     },
-    {
-        timestamps: true
-    }
 )
 
 const accountSchema: Schema<IAccount> = new Schema<IAccount>(
     {
         password: {
             type: String,
-            required: true
         },
         email: {
             type: String,
@@ -57,7 +66,7 @@ const accountSchema: Schema<IAccount> = new Schema<IAccount>(
             required: true,
             default: true
         },
-        token: {
+        accessToken: {
             type: String
         },
         refreshToken: {
@@ -65,9 +74,12 @@ const accountSchema: Schema<IAccount> = new Schema<IAccount>(
         },
         authProviders: {
             google: authProvidersSchema,
-            facebook: authProvidersSchema
         },
         registerType: {
+            type: String,
+            default: "Normal"
+        },
+        loginType: {
             type: String,
             default: "Normal"
         }
@@ -76,5 +88,15 @@ const accountSchema: Schema<IAccount> = new Schema<IAccount>(
         timestamps: true
     }
 )
+
+accountSchema.virtual('accountInfo', {
+    ref: 'accountinfos', 
+    localField: '_id', 
+    foreignField: 'accountId', 
+    justOne: true, 
+});
+
+accountSchema.set('toObject', { virtuals: true });
+accountSchema.set('toJSON', { virtuals: true });
 
 export default model<IAccount>('accounts', accountSchema)
